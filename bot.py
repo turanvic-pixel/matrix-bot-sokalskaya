@@ -240,6 +240,7 @@ async def show_result(query, context):
     kb = InlineKeyboardMarkup([
         [InlineKeyboardButton("📋 Рекомендации", callback_data=f"recs_{winner}")],
         [InlineKeyboardButton("⚠️ Ловушки", callback_data=f"warns_{winner}")],
+        [InlineKeyboardButton("📄 Скачать результат в Word", callback_data=f"download_{winner}")],
         [InlineKeyboardButton("🔄 Пройти снова", callback_data="restart")],
     ])
     context.user_data["winner"] = winner
@@ -376,9 +377,92 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.message.reply_text(text, parse_mode="Markdown", reply_markup=kb)
         return
 
+    if data.startswith("download_"):
+        key = data.split("_")[1]
+        await query.answer("Готовлю файл...")
+        await send_docx(query, context, key)
+        return
+
     if data.startswith("result_"):
         await show_result(query, context)
         return
+
+
+async def send_docx(query, context, winner_key):
+    import io
+    from datetime import datetime
+    from docx import Document
+    from docx.shared import Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    m = MATRIX[winner_key]
+    scores = context.user_data["quiz"]["scores"]
+    total = sum(scores.values()) or 1
+    date_str = datetime.now().strftime("%d.%m.%Y")
+
+    doc = Document()
+    style = doc.styles["Normal"]
+    style.font.name = "Arial"
+    style.font.size = Pt(11)
+
+    # Title
+    title = doc.add_heading("Результат теста: Энергетическая матрица", 0)
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    # Date and matrix
+    p = doc.add_paragraph()
+    p.add_run(f"Дата: {date_str}\n").font.size = Pt(10)
+    p.add_run(f"Матрица: {m['name']}\n").bold = True
+    p.add_run(f"{m['deviz']}\n").italic = True
+    doc.add_paragraph(m["sub"])
+
+    # Scores
+    doc.add_heading("Распределение ответов", 2)
+    order = ["S", "R", "L", "A"]
+    for k in order:
+        pct = round(scores[k] / total * 100)
+        bar = "█" * round(pct / 5) + "░" * (20 - round(pct / 5))
+        p = doc.add_paragraph()
+        r = p.add_run(f"{MATRIX[k]['name'].split()[0]:<8} {bar} {pct}%")
+        r.font.name = "Courier New"
+        r.font.size = Pt(10)
+
+    # Traits
+    doc.add_heading("Ключевые признаки", 2)
+    for t in m["traits"]:
+        doc.add_paragraph(t, style="List Bullet")
+
+    # Recommendations
+    doc.add_heading("Рекомендации", 2)
+    for i, (title_r, body) in enumerate(m["recs"], 1):
+        p = doc.add_paragraph()
+        p.add_run(f"{i}. {title_r}\n").bold = True
+        p.add_run(body)
+
+    # Warnings
+    doc.add_heading("Ловушки матрицы", 2)
+    for title_w, body in m["warns"]:
+        p = doc.add_paragraph()
+        p.add_run(f"⚠ {title_w}\n").bold = True
+        p.add_run(body)
+
+    # Footer
+    doc.add_paragraph()
+    footer = doc.add_paragraph("Тест построен на авторском материале Сокальской Екатерины Александровны.")
+    footer.runs[0].font.size = Pt(9)
+    footer.runs[0].font.color.rgb = RGBColor(0x88, 0x88, 0x88)
+
+    # Save to buffer
+    buf = io.BytesIO()
+    doc.save(buf)
+    buf.seek(0)
+
+    filename = f"матрица_{m['name'].split()[0]}_{date_str.replace('.', '-')}.docx"
+    await query.message.reply_document(
+        document=buf,
+        filename=filename,
+        caption=f"📄 Ваш результат: {m['name']}\n{m['deviz']}"
+    )
 
 
 def main():
