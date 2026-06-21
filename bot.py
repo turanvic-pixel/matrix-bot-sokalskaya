@@ -6,7 +6,8 @@ from telegram.ext import Application, CommandHandler, CallbackQueryHandler, Cont
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TOKEN = "8789499108:AAFaiAo6a-sHPhpdbP50BD0Mih1k908XoFE"
+import os
+TOKEN = os.environ.get("BOT_TOKEN", "8789499108:AAFaiAo6a-sHPhpdbP50BD0Mih1k908XoFE")
 
 QUESTIONS = [
     {"cat": "Завершение проекта", "q": "Крупный проект завершён. Что вы чувствуете в первые минуты?",
