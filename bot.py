@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 import os
-TOKEN = os.environ.get("BOT_TOKEN", "8789499108:AAFaiAo6a-sHPhpdbP50BD0Mih1k908XoFE")
+TOKEN = os.environ.get("BOT_TOKEN", "8789499108:AAH5EXyh0iZVKRfqy9vPHjFAdF-bpP5kgdA")
 
 QUESTIONS = [
     {"cat": "Завершение проекта", "q": "Крупный проект завершён. Что вы чувствуете в первые минуты?",
