@@ -467,7 +467,7 @@ async def send_docx(query, context, winner_key):
 
 
 def run_web():
-    import http.server, threading, os
+    import http.server, threading, os, time, urllib.request
     port = int(os.environ.get("PORT", 8080))
     class Handler(http.server.BaseHTTPRequestHandler):
         def do_GET(self):
@@ -479,6 +479,18 @@ def run_web():
     server = http.server.HTTPServer(("0.0.0.0", port), Handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     print(f"Web server started on port {port}")
+
+    def self_ping():
+        url = f"https://matrix-bot-sokalskaya.onrender.com"
+        while True:
+            time.sleep(600)
+            try:
+                urllib.request.urlopen(url, timeout=10)
+                print("Self-ping OK")
+            except:
+                pass
+    threading.Thread(target=self_ping, daemon=True).start()
+    print("Self-ping started every 10 minutes")
 
 
 def main():
