@@ -466,7 +466,23 @@ async def send_docx(query, context, winner_key):
     )
 
 
+def run_web():
+    import http.server, threading, os
+    port = int(os.environ.get("PORT", 8080))
+    class Handler(http.server.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+            self.wfile.write(b"Bot is running!")
+        def log_message(self, *args):
+            pass
+    server = http.server.HTTPServer(("0.0.0.0", port), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    print(f"Web server started on port {port}")
+
+
 def main():
+    run_web()
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(button_handler))
